@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Labour Khata Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{font-family:Inter,system-ui,sans-serif;color:#17231d;background:#f4f7f5;line-height:1.45}*{box-sizing:border-box}body{margin:0}.shell{max-width:1240px;margin:auto;padding:28px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px}.brand{display:flex;align-items:center;gap:12px}.logo{width:44px;height:44px;border-radius:13px;background:#157347;color:white;display:grid;place-items:center;font-weight:800}.muted{color:#66736c}.card{background:white;border:1px solid #dfe8e2;border-radius:18px;box-shadow:0 8px 28px rgba(24,70,45,.06)}#login{max-width:430px;margin:10vh auto;padding:28px}h1,h2,p{margin-top:0}label{display:block;font-size:13px;font-weight:600;margin:15px 0 6px}input,select{width:100%;padding:12px 14px;border:1px solid #cad7cf;border-radius:11px;font:inherit;background:white}button{border:0;border-radius:10px;padding:11px 14px;font:inherit;font-weight:650;cursor:pointer}.primary{background:#157347;color:white}.secondary{background:#e9f3ed;color:#14633f}.danger{background:#fee9e7;color:#a92d24}.ghost{background:#edf1ef;color:#35433c}.error{color:#b42318;font-size:13px;margin-top:12px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}.stat{padding:18px}.stat b{font-size:27px;display:block;margin-top:5px}.toolbar{display:grid;grid-template-columns:1fr 180px auto;gap:10px;padding:16px;margin-bottom:16px}.table-wrap{overflow:auto}.table-card{padding:0}table{width:100%;border-collapse:collapse;min-width:990px}th,td{text-align:left;padding:14px 16px;border-bottom:1px solid #edf1ef;font-size:14px}th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#65726b;background:#fafcfb}.badge{display:inline-flex;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700}.active{background:#ddf7e8;color:#12673a}.inactive{background:#fee6e3;color:#9f2e25}.paid{background:#e4efff;color:#245a9f}.unpaid{background:#fff0cf;color:#8a5910}.actions{display:flex;gap:7px;flex-wrap:wrap}.actions button{padding:8px 10px;font-size:12px}.empty{text-align:center;padding:50px;color:#66736c}.hide{display:none!important}.note{padding:12px 16px;background:#fff8df;border:1px solid #f5df8c;border-radius:12px;margin-bottom:16px;color:#694f00;font-size:14px}@media(max-width:800px){.shell{padding:18px}.stats{grid-template-columns:1fr 1fr}.toolbar{grid-template-columns:1fr}.top{align-items:flex-start}.top button{white-space:nowrap}}
+  </style>
+</head>
+<body>
+  <section id="login" class="card">
+    <div class="brand"><div class="logo">LK</div><div><h2 style="margin:0">Labour Khata</h2><span class="muted">Admin dashboard</span></div></div>
+    <form id="loginForm">
+      <label for="email">Admin email</label><input id="email" type="email" required autocomplete="username">
+      <label for="password">Password</label><input id="password" type="password" required autocomplete="current-password">
+      <button class="primary" style="width:100%;margin-top:18px">Sign in</button>
+      <div id="loginError" class="error"></div>
+    </form>
+  </section>
+
+  <main id="dashboard" class="shell hide">
+    <header class="top"><div class="brand"><div class="logo">LK</div><div><h2 style="margin:0">Labour Khata Admin</h2><span id="adminEmail" class="muted"></span></div></div><button id="logout" class="ghost">Sign out</button></header>
+    <div class="note">Payment मिलने पर <b>Mark Paid – 1 Year</b> दबाएँ। Payment न मिलने पर <b>Deactivate</b> करें। Deactivated user app के features use नहीं कर पाएगा और उसे 7837058100 पर contact करने का message दिखेगा।</div>
+    <section class="stats"><div class="card stat"><span class="muted">Total contractors</span><b id="total">0</b></div><div class="card stat"><span class="muted">Active</span><b id="active">0</b></div><div class="card stat"><span class="muted">Paid</span><b id="paid">0</b></div><div class="card stat"><span class="muted">Inactive / expired</span><b id="inactive">0</b></div></section>
+    <section class="card toolbar"><input id="search" placeholder="Search name or mobile"><select id="filter"><option value="all">All contractors</option><option value="active">Active</option><option value="inactive">Inactive / expired</option><option value="paid">Paid</option><option value="unpaid">Unpaid</option></select><button id="refresh" class="secondary">Refresh</button></section>
+    <section class="card table-card"><div class="table-wrap"><table><thead><tr><th>Contractor</th><th>Mobile</th><th>Payment</th><th>App access</th><th>Valid until</th><th>App / device</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table></div><div id="empty" class="empty hide">No contractor records found.</div></section>
+  </main>
+
+  <script type="module">
+    import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js';
+    import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut} from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
+    import {getFirestore,collection,doc,getDoc,getDocs,updateDoc,Timestamp,deleteField} from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
+    const firebaseConfig={apiKey:'AIzaSyAUb8_kiGPxWvzQb6JRlsRZwr4iF0itq-g',authDomain:'labour-khata-f59bd.firebaseapp.com',projectId:'labour-khata-f59bd',storageBucket:'labour-khata-f59bd.firebasestorage.app',messagingSenderId:'372634146787',appId:'1:372634146787:web:labourkhataadmin'};
+    const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);let records=[];
+    const $=id=>document.getElementById(id), date=v=>v?.toDate?new Intl.DateTimeFormat('en-IN',{day:'2-digit',month:'short',year:'numeric'}).format(v.toDate()):'—';
+    const effectiveInactive=x=>x.status==='inactive'||(x.paidUntil?.toDate&&x.paidUntil.toDate()<new Date());
+    $('loginForm').onsubmit=async e=>{e.preventDefault();$('loginError').textContent='';try{await signInWithEmailAndPassword(auth,$('email').value.trim(),$('password').value)}catch(err){$('loginError').textContent='Login failed. Check email, password and authorized domain.'}};
+    $('logout').onclick=()=>signOut(auth);$('refresh').onclick=load;$('search').oninput=render;$('filter').onchange=render;
+    onAuthStateChanged(auth,async user=>{if(!user){$('login').classList.remove('hide');$('dashboard').classList.add('hide');return}const admin=await getDoc(doc(db,'admins',user.uid));if(!admin.exists()||admin.data().active!==true){await signOut(auth);$('loginError').textContent='This account is not an active administrator.';return}$('adminEmail').textContent=user.email;$('login').classList.add('hide');$('dashboard').classList.remove('hide');load()});
+    async function load(){try{const snap=await getDocs(collection(db,'contractors'));records=snap.docs.map(d=>({id:d.id,...d.data()}));render()}catch(e){$('empty').textContent='Unable to load contractors. Check Firestore rules.';$('empty').classList.remove('hide')}}
+    function render(){const q=$('search').value.toLowerCase().trim(),f=$('filter').value;const view=records.filter(x=>{const inactive=effectiveInactive(x),paid=x.paymentStatus==='paid';const match=!q||`${x.name||''} ${x.mobile||''}`.toLowerCase().includes(q);const ok=f==='all'||(f==='active'&&!inactive)||(f==='inactive'&&inactive)||(f==='paid'&&paid)||(f==='unpaid'&&!paid);return match&&ok});$('total').textContent=records.length;$('active').textContent=records.filter(x=>!effectiveInactive(x)).length;$('paid').textContent=records.filter(x=>x.paymentStatus==='paid'&&!effectiveInactive(x)).length;$('inactive').textContent=records.filter(effectiveInactive).length;$('rows').innerHTML=view.map(x=>{const inactive=effectiveInactive(x),paid=x.paymentStatus==='paid';return `<tr><td><b>${esc(x.name||'Unnamed')}</b><br><span class="muted">${esc(x.contractorType||'—')}</span></td><td>${esc(x.mobile||'—')}</td><td><span class="badge ${paid?'paid':'unpaid'}">${paid?'Paid':'Unpaid'}</span></td><td><span class="badge ${inactive?'inactive':'active'}">${inactive?'Inactive':'Active'}</span></td><td>${date(x.paidUntil)}</td><td>${esc(x.appVersion||'—')}<br><span class="muted">${esc(x.phoneModel||'—')}</span></td><td><div class="actions"><button class="primary" data-action="pay" data-id="${x.id}">Mark Paid – 1 Year</button>${inactive?`<button class="secondary" data-action="activate" data-id="${x.id}">Activate</button>`:`<button class="danger" data-action="deactivate" data-id="${x.id}">Deactivate</button>`}</div></td></tr>`}).join('');$('empty').classList.toggle('hide',view.length>0);document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>act(b.dataset.action,b.dataset.id))}
+    async function act(action,id){const ref=doc(db,'contractors',id);if(action==='pay'){if(!confirm('Confirm payment received and activate this app for one year?'))return;const until=new Date();until.setFullYear(until.getFullYear()+1);await updateDoc(ref,{paymentStatus:'paid',paidAt:Timestamp.now(),paidUntil:Timestamp.fromDate(until),status:'active'})}else if(action==='deactivate'){if(!confirm('Deactivate this contractor? The app features will be locked.'))return;await updateDoc(ref,{status:'inactive',paymentStatus:'unpaid'})}else{if(!confirm('Activate this contractor without recording annual payment?'))return;await updateDoc(ref,{status:'active',paymentStatus:'unpaid',paidUntil:deleteField()})}await load()}
+    function esc(v){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+  </script>
+</body>
+</html>
